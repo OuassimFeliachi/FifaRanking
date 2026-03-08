@@ -70,5 +70,26 @@ def create_app():
     with app.app_context():
         _migrate_db(app)  # add missing columns before create_all
         db.create_all()   # create any brand-new tables
+        _backfill_elo_snapshots()  # recompute if effective_k is missing
 
     return app
+
+
+def _backfill_elo_snapshots():
+    """
+    If any Elo snapshot is missing effective_k (i.e. was created before the
+    provisional-K / multiplier upgrade), wipe and recompute all Elo snapshots.
+    Runs once after migration; afterwards every snapshot will have the new fields.
+    """
+    from app.models import RatingSnapshot, Match
+    needs_backfill = (
+        RatingSnapshot.query
+        .filter(
+            RatingSnapshot.system_name == "elo",
+            RatingSnapshot.effective_k.is_(None),
+        )
+        .first()
+    )
+    if needs_backfill and Match.query.count() > 0:
+        import app.services as svc
+        svc.recompute_all_ratings("elo")
