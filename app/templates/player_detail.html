@@ -3,21 +3,63 @@
 {% block content %}
 
 <!-- Profile header -->
-<div class="flex items-center gap-4 mb-6 p-5 rounded-xl border border-accent/15 bg-accent/[0.05]">
+<div class="flex flex-wrap items-center gap-4 mb-6 p-5 rounded-xl border border-accent/15 bg-accent/[0.05]">
   <div class="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-emerald-600
               flex items-center justify-center text-black font-extrabold text-2xl shrink-0">
     {{ player.name[0].upper() }}
   </div>
-  <div>
+  <div class="flex-1">
     <h1 class="text-2xl font-bold text-white">{{ player.name }}</h1>
-    <p class="text-slate-500 text-sm mt-0.5"><i class="fa fa-gamepad"></i> {{ stats.games }} games played</p>
+    <p class="text-slate-500 text-sm mt-0.5">
+      <i class="fa fa-gamepad"></i> {{ stats.games }} games played
+      <span class="mx-2 text-slate-700">·</span>
+      <span class="text-xs uppercase tracking-wider">{{ system }}</span>
+    </p>
   </div>
+  <!-- Form badges -->
+  {% if form %}
+  <div class="flex items-center gap-1">
+    <span class="text-xs text-slate-600 mr-1">Form:</span>
+    {% for r in form %}
+      {% if r == 'W' %}
+        <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-emerald-500/15 text-emerald-400">W</span>
+      {% elif r == 'D' %}
+        <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-slate-500/20 text-slate-400">D</span>
+      {% else %}
+        <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-red-500/15 text-red-400">L</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
+
+<!-- Streaks -->
+{% if streaks.current > 0 %}
+<div class="mb-4 flex flex-wrap gap-2">
+  <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold
+    {% if streaks.current_type == 'W' %}border-emerald-500/30 bg-emerald-500/10 text-emerald-400
+    {% elif streaks.current_type == 'L' %}border-red-500/30 bg-red-500/10 text-red-400
+    {% else %}border-slate-500/30 bg-slate-500/10 text-slate-400{% endif %}">
+    <i class="fa fa-bolt"></i>
+    Current streak: {{ streaks.current }}{{ streaks.current_type }}
+  </div>
+  {% if streaks.longest_win > 0 %}
+  <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.07] text-xs text-slate-400">
+    <i class="fa fa-trophy text-yellow-500/70"></i> Longest win run: {{ streaks.longest_win }}
+  </div>
+  {% endif %}
+  {% if streaks.longest_loss > 0 %}
+  <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.07] text-xs text-slate-400">
+    <i class="fa fa-skull-crossbones text-red-500/50"></i> Longest loss run: {{ streaks.longest_loss }}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
 
 <!-- Stat cards -->
 <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-4">
   {% set stats_list = [
-    ('fa-star',        'text-yellow-400', stats.rating,       'Elo'),
+    ('fa-star',        'text-yellow-400', stats.rating,       'Rating'),
     ('fa-medal',       'text-accent',     stats.points,       'Points'),
     ('fa-check',       'text-accent',     stats.wins,         'Wins'),
     ('fa-minus',       'text-slate-500',  stats.draws,        'Draws'),
@@ -35,10 +77,10 @@
   {% endfor %}
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
   <!-- Chart -->
   <div class="md:col-span-2 card">
-    <div class="card-head"><i class="fa fa-chart-line"></i> Elo Evolution</div>
+    <div class="card-head"><i class="fa fa-chart-line"></i> Rating Evolution</div>
     <div class="p-4">
       {% if rating_history | length > 1 %}
         <canvas id="ratingChart" height="160"></canvas>
@@ -75,6 +117,7 @@
                class="text-slate-300 hover:text-accent font-medium transition-colors">{{ opp_p.name }}</a>
           </td>
           <td class="r font-bold text-slate-200">{{ my }}–{{ opp }}</td>
+          <td class="text-slate-600 text-xs">{{ m.match_date }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -84,6 +127,52 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Head-to-Head table -->
+{% if h2h_list %}
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-swords"></i> Head-to-Head</div>
+  <div class="overflow-x-auto">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Opponent</th>
+          <th class="c">Played</th>
+          <th class="c">Won</th>
+          <th class="c">Drew</th>
+          <th class="c">Lost</th>
+          <th class="r">Goals</th>
+          <th class="c">Predict</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in h2h_list %}
+        <tr>
+          <td>
+            <a href="{{ url_for('main.player_detail', player_id=h.opponent.id) }}"
+               class="font-medium text-slate-200 hover:text-accent transition-colors">
+              {{ h.opponent.name }}
+            </a>
+          </td>
+          <td class="c text-slate-400">{{ h.total }}</td>
+          <td class="c font-semibold text-emerald-400">{{ h.p1_wins }}</td>
+          <td class="c text-slate-500">{{ h.draws }}</td>
+          <td class="c font-semibold text-red-400">{{ h.p2_wins }}</td>
+          <td class="r text-slate-400">{{ h.p1_goals }}–{{ h.p2_goals }}</td>
+          <td class="c">
+            <a href="{{ url_for('main.predict', p1_id=player.id, p2_id=h.opponent.id) }}"
+               class="text-xs text-slate-500 hover:text-accent transition-colors">
+              <i class="fa fa-bolt"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}

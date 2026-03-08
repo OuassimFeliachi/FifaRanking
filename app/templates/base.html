@@ -36,11 +36,14 @@
       <span>FIFA <span class="text-accent">Elo</span></span>
     </a>
     <div class="hidden md:flex items-center gap-0.5 ml-auto">
-      <a href="{{ url_for('main.index') }}"     class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
-      <a href="{{ url_for('main.players') }}"   class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
-      <a href="{{ url_for('main.add_match') }}" class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
-      <a href="{{ url_for('main.matches') }}"   class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+      <a href="{{ url_for('main.index') }}"      class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
+      <a href="{{ url_for('main.players') }}"    class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
+      <a href="{{ url_for('main.add_match') }}"  class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
+      <a href="{{ url_for('main.matches') }}"    class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+      <a href="{{ url_for('main.records') }}"    class="nav-link"><i class="fa fa-fire fa-xs"></i> Records</a>
+      <a href="{{ url_for('main.predict') }}"    class="nav-link"><i class="fa fa-bolt fa-xs"></i> Predict</a>
       <a href="{{ url_for('main.import_csv') }}" class="nav-link"><i class="fa fa-file-csv fa-xs"></i> Import</a>
+      <a href="{{ url_for('main.settings') }}"   class="nav-link"><i class="fa fa-gear fa-xs"></i> Settings</a>
     </div>
     <button onclick="document.getElementById('mm').classList.toggle('hidden')"
             class="md:hidden ml-auto text-slate-400 hover:text-white p-1.5 transition-colors">
@@ -48,11 +51,14 @@
     </button>
   </div>
   <div id="mm" class="hidden md:hidden border-t border-white/[0.06] px-4 py-2 flex flex-col gap-0.5">
-    <a href="{{ url_for('main.index') }}"     class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
-    <a href="{{ url_for('main.players') }}"   class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
-    <a href="{{ url_for('main.add_match') }}" class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
-    <a href="{{ url_for('main.matches') }}"   class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+    <a href="{{ url_for('main.index') }}"      class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
+    <a href="{{ url_for('main.players') }}"    class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
+    <a href="{{ url_for('main.add_match') }}"  class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
+    <a href="{{ url_for('main.matches') }}"    class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+    <a href="{{ url_for('main.records') }}"    class="nav-link"><i class="fa fa-fire fa-xs"></i> Records</a>
+    <a href="{{ url_for('main.predict') }}"    class="nav-link"><i class="fa fa-bolt fa-xs"></i> Predict</a>
     <a href="{{ url_for('main.import_csv') }}" class="nav-link"><i class="fa fa-file-csv fa-xs"></i> Import</a>
+    <a href="{{ url_for('main.settings') }}"   class="nav-link"><i class="fa fa-gear fa-xs"></i> Settings</a>
   </div>
 </nav>
 

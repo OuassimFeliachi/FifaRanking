@@ -2,11 +2,39 @@
 {% block title %}Ranking{% endblock %}
 {% block content %}
 
-<div class="flex items-center gap-2 mb-6">
-  <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+<div class="flex flex-wrap items-center gap-3 mb-5">
+  <h1 class="text-2xl font-bold text-white flex items-center gap-2 mr-auto">
     <i class="fa fa-trophy text-accent text-xl"></i> Leaderboard
+    <span class="text-xs font-normal text-slate-500 ml-1 uppercase tracking-wider">{{ system }}</span>
   </h1>
+  <a href="{{ url_for('main.settings') }}"
+     class="text-xs text-slate-500 hover:text-accent transition-colors flex items-center gap-1">
+    <i class="fa fa-gear"></i> Switch rating system
+  </a>
 </div>
+
+<!-- How ratings work — collapsible -->
+<details class="mb-4">
+  <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-300 transition-colors
+                  flex items-center gap-1.5 select-none">
+    <i class="fa fa-circle-info"></i>
+    How does the {{ system }} rating system work?
+  </summary>
+  <div class="mt-2 p-4 rounded-lg border border-white/[0.06] bg-white/[0.02] text-sm text-slate-400 leading-relaxed">
+    {% if system == 'elo' %}
+      <p><strong class="text-slate-200">Elo</strong> — Each player starts at <strong class="text-accent">1500</strong>.
+      After every match the winner gains points (and the loser loses the same amount). The K-factor is
+      <strong class="text-accent">32</strong>. The amount of points exchanged depends on the expected outcome:
+      beating a much stronger player earns more points than beating a weaker one. A draw gives each player
+      half the expected exchange.</p>
+    {% else %}
+      <p><strong class="text-slate-200">Glicko-2</strong> — Extends Elo with a <em>Rating Deviation (RD)</em>
+      that measures uncertainty, and a <em>volatility</em> that tracks rating consistency.
+      Players start at <strong class="text-accent">1500 ± 350 RD</strong>.
+      The rating converges as more games are played. A high RD means the rating is less reliable.</p>
+    {% endif %}
+  </div>
+</details>
 
 {% if ranking %}
 <div class="card">
@@ -15,8 +43,10 @@
       <thead>
         <tr>
           <th>#</th>
+          <th></th><!-- movement -->
           <th>Player</th>
-          <th>Elo</th>
+          <th>{{ 'Glicko' if system == 'glicko2' else 'Elo' }}</th>
+          {% if system == 'glicko2' %}<th class="r">RD</th>{% endif %}
           <th class="r">Pts</th>
           <th class="r">G</th>
           <th class="r">W</th>
@@ -44,6 +74,22 @@
               <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs text-slate-500">{{ row.rank }}</span>
             {% endif %}
           </td>
+          <!-- Movement indicator -->
+          <td style="padding-left:2px;padding-right:2px;width:28px">
+            {% if row.movement_dir == 'up' %}
+              <span class="text-emerald-400 text-xs font-semibold flex items-center gap-0.5">
+                <i class="fa fa-caret-up"></i>{{ row.movement }}
+              </span>
+            {% elif row.movement_dir == 'down' %}
+              <span class="text-red-400 text-xs font-semibold flex items-center gap-0.5">
+                <i class="fa fa-caret-down"></i>{{ row.movement }}
+              </span>
+            {% elif row.movement_dir == 'new' %}
+              <span class="text-accent text-[0.6rem] font-bold">NEW</span>
+            {% else %}
+              <span class="text-slate-700 text-xs">—</span>
+            {% endif %}
+          </td>
           <td>
             <a href="{{ url_for('main.player_detail', player_id=row.id) }}"
                class="font-medium text-slate-200 hover:text-accent transition-colors">{{ row.name }}</a>
@@ -53,6 +99,9 @@
               {{ row.rating }}
             </span>
           </td>
+          {% if system == 'glicko2' %}
+          <td class="r text-slate-500 text-xs">±{{ row.rd }}</td>
+          {% endif %}
           <td class="r font-medium">{{ row.points }}</td>
           <td class="r text-slate-400">{{ row.games }}</td>
           <td class="r font-semibold text-emerald-400">{{ row.wins }}</td>
@@ -70,6 +119,16 @@
     </table>
   </div>
 </div>
+
+<!-- Quick predict link -->
+{% if ranking | length >= 2 %}
+<div class="mt-3 text-center">
+  <a href="{{ url_for('main.predict') }}" class="text-xs text-slate-500 hover:text-accent transition-colors">
+    <i class="fa fa-bolt"></i> Predict a match outcome
+  </a>
+</div>
+{% endif %}
+
 {% else %}
 <div class="flash flash-inf">
   <i class="fa fa-circle-info mt-0.5"></i>

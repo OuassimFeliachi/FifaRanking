@@ -1,6 +1,6 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.models import Player, Match
+from app.models import Player, Match, AuditLog, AppSetting
 from app import db
 import app.services as svc
 
@@ -13,8 +13,10 @@ bp = Blueprint("main", __name__)
 
 @bp.route("/")
 def index():
-    ranking = svc.get_ranking()
-    return render_template("index.html", ranking=ranking)
+    system = svc.get_active_system()
+    ranking = svc.get_ranking(system)
+    all_players = Player.query.order_by(Player.name).all()
+    return render_template("index.html", ranking=ranking, system=system, all_players=all_players)
 
 
 # ---------------------------------------------------------------------------
@@ -42,16 +44,20 @@ def players():
 @bp.route("/players/<int:player_id>")
 def player_detail(player_id):
     player = Player.query.get_or_404(player_id)
-    ratings = svc.get_current_ratings()
-    stats = svc.compute_player_stats(player, ratings[player.id])
-    recent_matches = svc.get_player_recent_matches(player)
-    rating_history = svc.get_player_rating_history(player)
+    system = svc.get_active_system()
+    rich = svc.get_player_stats_rich(player_id, system)
+    all_players = Player.query.filter(Player.id != player_id).order_by(Player.name).all()
     return render_template(
         "player_detail.html",
         player=player,
-        stats=stats,
-        recent_matches=recent_matches,
-        rating_history=rating_history,
+        stats=rich["stats"],
+        recent_matches=rich["recent_matches"],
+        rating_history=rich["rating_history"],
+        form=rich["form"],
+        streaks=rich["streaks"],
+        h2h_list=rich["h2h_list"],
+        system=system,
+        all_players=all_players,
     )
 
 
@@ -88,15 +94,93 @@ def add_match():
 
 
 # ---------------------------------------------------------------------------
+# Edit match
+# ---------------------------------------------------------------------------
+
+@bp.route("/matches/<int:match_id>/edit", methods=["GET", "POST"])
+def edit_match(match_id):
+    match = Match.query.get_or_404(match_id)
+    all_players = Player.query.order_by(Player.name).all()
+    error = None
+
+    if request.method == "POST":
+        try:
+            match_date = date.fromisoformat(request.form["match_date"])
+            player1_id = int(request.form["player1_id"])
+            player2_id = int(request.form["player2_id"])
+            score1 = int(request.form["score1"])
+            score2 = int(request.form["score2"])
+        except (KeyError, ValueError):
+            error = "Invalid form data. Please check all fields."
+        else:
+            _, error = svc.edit_match(match_id, match_date, player1_id, player2_id, score1, score2)
+            if not error:
+                flash("Match updated successfully.", "success")
+                return redirect(url_for("main.matches"))
+
+    return render_template(
+        "edit_match.html",
+        match=match,
+        players=all_players,
+        error=error,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Delete match
+# ---------------------------------------------------------------------------
+
+@bp.route("/matches/<int:match_id>/delete", methods=["POST"])
+def delete_match(match_id):
+    ok, error = svc.delete_match(match_id)
+    if ok:
+        flash("Match deleted.", "success")
+    else:
+        flash(f"Error: {error}", "danger")
+    return redirect(url_for("main.matches"))
+
+
+# ---------------------------------------------------------------------------
 # Match history
 # ---------------------------------------------------------------------------
 
 @bp.route("/matches")
 def matches():
-    all_matches = (
-        Match.query.order_by(Match.match_date, Match.id).all()
+    player_filter = request.args.get("player_id", type=int)
+    date_from = request.args.get("date_from", "")
+    date_to = request.args.get("date_to", "")
+
+    query = Match.query
+
+    if player_filter:
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(Match.player1_id == player_filter, Match.player2_id == player_filter)
+        )
+
+    if date_from:
+        try:
+            query = query.filter(Match.match_date >= date.fromisoformat(date_from))
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            query = query.filter(Match.match_date <= date.fromisoformat(date_to))
+        except ValueError:
+            pass
+
+    all_matches = query.order_by(Match.match_date.desc(), Match.id.desc()).all()
+    all_players = Player.query.order_by(Player.name).all()
+
+    return render_template(
+        "matches.html",
+        matches=all_matches,
+        all_players=all_players,
+        player_filter=player_filter,
+        date_from=date_from,
+        date_to=date_to,
     )
-    return render_template("matches.html", matches=all_matches)
 
 
 # ---------------------------------------------------------------------------
@@ -117,3 +201,80 @@ def import_csv():
                 flash(f"Imported {count} match(es) successfully.", "success")
 
     return render_template("import_csv.html", result=result)
+
+
+# ---------------------------------------------------------------------------
+# Records / fun stats
+# ---------------------------------------------------------------------------
+
+@bp.route("/records")
+def records():
+    stats = svc.get_fun_stats()
+    return render_template("records.html", stats=stats)
+
+
+# ---------------------------------------------------------------------------
+# Predict match
+# ---------------------------------------------------------------------------
+
+@bp.route("/predict")
+def predict():
+    all_players = Player.query.order_by(Player.name).all()
+    prediction = None
+    p1_id = request.args.get("p1_id", type=int)
+    p2_id = request.args.get("p2_id", type=int)
+    system = svc.get_active_system()
+
+    if p1_id and p2_id and p1_id != p2_id:
+        prediction = svc.predict_match(p1_id, p2_id, system)
+
+    return render_template(
+        "predict.html",
+        all_players=all_players,
+        prediction=prediction,
+        p1_id=p1_id,
+        p2_id=p2_id,
+        system=system,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Audit log
+# ---------------------------------------------------------------------------
+
+@bp.route("/audit")
+def audit():
+    page = request.args.get("page", 1, type=int)
+    per_page = 50
+    logs = (
+        AuditLog.query
+        .order_by(AuditLog.id.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    return render_template("audit.html", logs=logs)
+
+
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+
+@bp.route("/settings", methods=["GET", "POST"])
+def settings():
+    if request.method == "POST":
+        rating_system = request.form.get("rating_system", "elo")
+        if rating_system not in ("elo", "glicko2"):
+            flash("Invalid rating system.", "danger")
+        else:
+            old = svc.get_setting("rating_system", "elo")
+            svc.set_setting("rating_system", rating_system)
+            if old != rating_system:
+                svc.recompute_all_ratings(rating_system)
+                svc.audit_log("setting", None, "change_rating_system",
+                              old={"rating_system": old},
+                              new={"rating_system": rating_system})
+                db.session.commit()
+            flash(f"Rating system set to {rating_system}.", "success")
+        return redirect(url_for("main.settings"))
+
+    current_system = svc.get_active_system()
+    return render_template("settings.html", current_system=current_system)

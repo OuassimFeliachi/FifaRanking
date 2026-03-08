@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Records{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+  <i class="fa fa-fire text-accent text-xl"></i> Records &amp; Fun Stats
+</h1>
+
+{% if not stats %}
+<div class="flash flash-inf">
+  <i class="fa fa-circle-info mt-0.5"></i>
+  No matches recorded yet. Start playing to see records!
+</div>
+{% else %}
+
+<!-- Summary row -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-accent">{{ stats.total_matches }}</div>
+    <div class="text-slate-500 text-xs uppercase tracking-wider mt-1">Matches played</div>
+  </div>
+  <div class="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 text-center">
+    <div class="text-2xl font-bold text-slate-200">{{ stats.total_players }}</div>
+    <div class="text-slate-500 text-xs uppercase tracking-wider mt-1">Players</div>
+  </div>
+  {% if stats.most_games[0] %}
+  <div class="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 text-center">
+    <div class="text-xl font-bold text-slate-200">
+      <a href="{{ url_for('main.player_detail', player_id=stats.most_games[0].id) }}"
+         class="hover:text-accent transition-colors">{{ stats.most_games[0].name }}</a>
+    </div>
+    <div class="text-accent text-xs font-semibold">{{ stats.most_games[1] }} games</div>
+    <div class="text-slate-500 text-xs uppercase tracking-wider mt-1">Most active</div>
+  </div>
+  {% endif %}
+  {% if stats.top_scorer[0] %}
+  <div class="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 text-center">
+    <div class="text-xl font-bold text-slate-200">
+      <a href="{{ url_for('main.player_detail', player_id=stats.top_scorer[0].id) }}"
+         class="hover:text-accent transition-colors">{{ stats.top_scorer[0].name }}</a>
+    </div>
+    <div class="text-accent text-xs font-semibold">{{ stats.top_scorer[1] }} goals</div>
+    <div class="text-slate-500 text-xs uppercase tracking-wider mt-1">Top scorer</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  <!-- Biggest win -->
+  {% if stats.biggest_margin %}
+  {% set bm = stats.biggest_margin %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-trophy"></i> Biggest Win</div>
+    <div class="p-5 text-center">
+      <div class="text-4xl font-extrabold text-accent mb-1">{{ bm.margin }}-goal margin</div>
+      <div class="text-slate-300 font-medium">
+        <a href="{{ url_for('main.player_detail', player_id=bm.winner.id) }}"
+           class="hover:text-accent transition-colors">{{ bm.winner.name }}</a>
+        <span class="text-emerald-400 font-bold mx-2">
+          {{ bm.match.score1 }}–{{ bm.match.score2 }}
+        </span>
+        <a href="{{ url_for('main.player_detail', player_id=bm.loser.id) }}"
+           class="hover:text-accent transition-colors">{{ bm.loser.name }}</a>
+      </div>
+      <div class="text-slate-500 text-xs mt-2">{{ bm.match.match_date }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Highest scoring -->
+  {% if stats.most_goals %}
+  {% set mg = stats.most_goals %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-futbol"></i> Most Goals in a Match</div>
+    <div class="p-5 text-center">
+      <div class="text-4xl font-extrabold text-accent mb-1">{{ mg.total }} goals</div>
+      <div class="text-slate-300 font-medium">
+        <a href="{{ url_for('main.player_detail', player_id=mg.match.player1_id) }}"
+           class="hover:text-accent transition-colors">{{ mg.match.player1.name }}</a>
+        <span class="text-slate-200 font-bold mx-2">
+          {{ mg.match.score1 }}–{{ mg.match.score2 }}
+        </span>
+        <a href="{{ url_for('main.player_detail', player_id=mg.match.player2_id) }}"
+           class="hover:text-accent transition-colors">{{ mg.match.player2.name }}</a>
+      </div>
+      <div class="text-slate-500 text-xs mt-2">{{ mg.match.match_date }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Best win rate -->
+  {% if stats.best_winrate %}
+  {% set bwr = stats.best_winrate %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-percent"></i> Best Win Rate (min 3 games)</div>
+    <div class="p-5 text-center">
+      <div class="text-4xl font-extrabold text-accent mb-1">{{ bwr.rate }}%</div>
+      <div class="text-slate-300 font-medium">
+        <a href="{{ url_for('main.player_detail', player_id=bwr.player.id) }}"
+           class="hover:text-accent transition-colors">{{ bwr.player.name }}</a>
+      </div>
+      <div class="text-slate-500 text-xs mt-2">over {{ bwr.games }} games</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Longest win streak -->
+  {% if stats.longest_streak and stats.longest_streak.streak > 0 %}
+  {% set ls = stats.longest_streak %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-bolt"></i> Longest Win Streak</div>
+    <div class="p-5 text-center">
+      <div class="text-4xl font-extrabold text-accent mb-1">{{ ls.streak }} in a row</div>
+      <div class="text-slate-300 font-medium">
+        <a href="{{ url_for('main.player_detail', player_id=ls.player.id) }}"
+           class="hover:text-accent transition-colors">{{ ls.player.name }}</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Most draws -->
+  {% if stats.most_draws[0] and stats.most_draws[1] > 0 %}
+  {% set md = stats.most_draws %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-equals"></i> Draw King</div>
+    <div class="p-5 text-center">
+      <div class="text-4xl font-extrabold text-slate-400 mb-1">{{ md[1] }} draws</div>
+      <div class="text-slate-300 font-medium">
+        <a href="{{ url_for('main.player_detail', player_id=md[0].id) }}"
+           class="hover:text-accent transition-colors">{{ md[0].name }}</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}

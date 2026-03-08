@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Predict{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+  <i class="fa fa-bolt text-accent text-xl"></i> Match Predictor
+  <span class="text-xs font-normal text-slate-500 ml-1 uppercase tracking-wider">{{ system }}</span>
+</h1>
+
+<div class="max-w-xl mx-auto">
+  <div class="card mb-4">
+    <div class="card-head"><i class="fa fa-sliders"></i> Select Players</div>
+    <form method="get" class="p-5 flex flex-col gap-4">
+      <div class="grid grid-cols-[1fr_40px_1fr] gap-3 items-end">
+        <div>
+          <label class="lbl">Player 1</label>
+          <select class="inp" name="p1_id" required>
+            <option value="">-- pick --</option>
+            {% for p in all_players %}
+            <option value="{{ p.id }}" {% if p1_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="text-center text-slate-500 font-bold text-sm pb-2.5">VS</div>
+        <div>
+          <label class="lbl">Player 2</label>
+          <select class="inp" name="p2_id" required>
+            <option value="">-- pick --</option>
+            {% for p in all_players %}
+            <option value="{{ p.id }}" {% if p2_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn-green">
+        <i class="fa fa-bolt"></i> Predict
+      </button>
+    </form>
+  </div>
+
+  {% if prediction %}
+  {% set pr = prediction %}
+
+  <!-- Ratings -->
+  <div class="card mb-4">
+    <div class="card-head"><i class="fa fa-star"></i> Current Ratings</div>
+    <div class="p-5 grid grid-cols-3 gap-4 text-center">
+      <div>
+        <div class="font-bold text-slate-200 text-lg">{{ pr.p1.name }}</div>
+        <div class="text-accent font-bold text-2xl">{{ pr.r1 }}</div>
+        <div class="text-slate-500 text-xs mt-1">{{ system }}</div>
+      </div>
+      <div class="flex flex-col items-center justify-center">
+        <div class="text-slate-600 font-bold">VS</div>
+        {% if pr.diff > 0 %}
+        <div class="text-xs text-slate-500 mt-1">Δ {{ pr.diff }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="font-bold text-slate-200 text-lg">{{ pr.p2.name }}</div>
+        <div class="text-accent font-bold text-2xl">{{ pr.r2 }}</div>
+        <div class="text-slate-500 text-xs mt-1">{{ system }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Probabilities -->
+  <div class="card mb-4">
+    <div class="card-head"><i class="fa fa-chart-pie"></i> Win Probabilities</div>
+    <div class="p-5">
+      <!-- Bar -->
+      <div class="flex rounded-lg overflow-hidden h-10 mb-4">
+        <div class="flex items-center justify-center text-xs font-bold text-black transition-all"
+             style="width:{{ pr.p1_win }}%; background:linear-gradient(135deg,#00e676,#00c96a)">
+          {% if pr.p1_win > 8 %}{{ pr.p1_win }}%{% endif %}
+        </div>
+        <div class="flex items-center justify-center text-xs font-bold text-slate-300 bg-slate-700/60 transition-all"
+             style="width:{{ pr.draw }}%">
+          {% if pr.draw > 8 %}{{ pr.draw }}%{% endif %}
+        </div>
+        <div class="flex items-center justify-center text-xs font-bold text-black transition-all"
+             style="width:{{ pr.p2_win }}%; background:linear-gradient(135deg,#f87171,#ef4444)">
+          {% if pr.p2_win > 8 %}{{ pr.p2_win }}%{% endif %}
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="grid grid-cols-3 text-center gap-2">
+        <div>
+          <div class="text-2xl font-extrabold text-accent">{{ pr.p1_win }}%</div>
+          <div class="text-slate-300 text-sm font-medium">{{ pr.p1.name }}</div>
+          <div class="text-slate-600 text-xs">wins</div>
+        </div>
+        <div>
+          <div class="text-2xl font-extrabold text-slate-400">{{ pr.draw }}%</div>
+          <div class="text-slate-300 text-sm font-medium">Draw</div>
+          <div class="text-slate-600 text-xs">&nbsp;</div>
+        </div>
+        <div>
+          <div class="text-2xl font-extrabold text-red-400">{{ pr.p2_win }}%</div>
+          <div class="text-slate-300 text-sm font-medium">{{ pr.p2.name }}</div>
+          <div class="text-slate-600 text-xs">wins</div>
+        </div>
+      </div>
+
+      <p class="text-slate-600 text-xs text-center mt-4">
+        Based on {{ system }} ratings. Draw probability modeled as a function of rating difference.
+      </p>
+    </div>
+  </div>
+
+  <!-- H2H summary -->
+  {% if pr.h2h.total > 0 %}
+  <div class="card">
+    <div class="card-head"><i class="fa fa-swords"></i> Head-to-Head History</div>
+    <div class="p-5 grid grid-cols-3 text-center gap-4">
+      <div>
+        <div class="text-2xl font-bold text-emerald-400">{{ pr.h2h.p1_wins }}</div>
+        <div class="text-slate-400 text-sm">{{ pr.p1.name }}</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-400">{{ pr.h2h.draws }}</div>
+        <div class="text-slate-400 text-sm">Draws</div>
+        <div class="text-slate-600 text-xs mt-1">{{ pr.h2h.total }} played</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-red-400">{{ pr.h2h.p2_wins }}</div>
+        <div class="text-slate-400 text-sm">{{ pr.p2.name }}</div>
+      </div>
+    </div>
+    <div class="px-5 pb-4 text-center text-slate-500 text-xs">
+      Goals: {{ pr.p1.name }} {{ pr.h2h.p1_goals }} — {{ pr.h2h.p2_goals }} {{ pr.p2.name }}
+    </div>
+  </div>
+  {% else %}
+  <div class="flash flash-inf">
+    <i class="fa fa-circle-info mt-0.5"></i>
+    These two players have never faced each other.
+  </div>
+  {% endif %}
+
+  {% endif %}
+</div>
+{% endblock %}

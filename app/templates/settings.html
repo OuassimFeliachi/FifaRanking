@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+  <i class="fa fa-gear text-accent text-xl"></i> Settings
+</h1>
+
+<div class="max-w-xl mx-auto flex flex-col gap-4">
+
+  <!-- Rating system -->
+  <div class="card">
+    <div class="card-head"><i class="fa fa-star"></i> Rating System</div>
+    <div class="p-5">
+      <p class="text-slate-400 text-sm mb-4">
+        Choose how player ratings are calculated. Changing the system will
+        <strong class="text-slate-200">recompute all ratings from scratch</strong>
+        using the selected algorithm.
+      </p>
+
+      <form method="post" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-3">
+          <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all
+                        {% if current_system == 'elo' %}border-accent/40 bg-accent/[0.05]{% else %}border-white/[0.07] hover:border-white/20 bg-white/[0.02]{% endif %}">
+            <input type="radio" name="rating_system" value="elo"
+                   {% if current_system == 'elo' %}checked{% endif %}
+                   class="mt-0.5 accent-[#00e676]">
+            <div>
+              <div class="font-semibold text-slate-200 text-sm">Elo</div>
+              <div class="text-slate-500 text-xs mt-0.5">
+                Classic system. Start at 1500, K=32. Simple, proven, widely understood.
+                Every match directly updates both players' ratings.
+              </div>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all
+                        {% if current_system == 'glicko2' %}border-accent/40 bg-accent/[0.05]{% else %}border-white/[0.07] hover:border-white/20 bg-white/[0.02]{% endif %}">
+            <input type="radio" name="rating_system" value="glicko2"
+                   {% if current_system == 'glicko2' %}checked{% endif %}
+                   class="mt-0.5 accent-[#00e676]">
+            <div>
+              <div class="font-semibold text-slate-200 text-sm">Glicko-2</div>
+              <div class="text-slate-500 text-xs mt-0.5">
+                Extended Elo with Rating Deviation (RD) and volatility.
+                RD measures confidence — it shrinks as you play more games.
+                More statistically accurate for infrequent players.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-green">
+          <i class="fa fa-floppy-disk"></i> Save Settings
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Audit link -->
+  <div class="card">
+    <div class="card-head"><i class="fa fa-scroll"></i> Audit Log</div>
+    <div class="p-5 flex items-center justify-between">
+      <p class="text-slate-400 text-sm">View a full history of all changes made to matches and settings.</p>
+      <a href="{{ url_for('main.audit') }}"
+         class="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/[0.07] text-slate-300
+                hover:border-accent/40 hover:text-accent text-sm font-medium transition-all shrink-0 ml-4">
+        <i class="fa fa-arrow-right"></i> View Log
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
