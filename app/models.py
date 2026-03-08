@@ -59,6 +59,9 @@ class RatingSnapshot(db.Model):
     delta = db.Column(db.Float, nullable=True)
     rd_before = db.Column(db.Float, nullable=True)
     rd_after = db.Column(db.Float, nullable=True)
+    effective_k = db.Column(db.Float, nullable=True)
+    goal_diff_mult = db.Column(db.Float, nullable=True)
+    repeat_mult = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

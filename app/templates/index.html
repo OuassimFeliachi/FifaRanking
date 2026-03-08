@@ -2,36 +2,72 @@
 {% block title %}Ranking{% endblock %}
 {% block content %}
 
-<div class="flex flex-wrap items-center gap-3 mb-5">
+<div class="flex flex-wrap items-center gap-3 mb-4">
   <h1 class="text-2xl font-bold text-white flex items-center gap-2 mr-auto">
     <i class="fa fa-trophy text-accent text-xl"></i> Leaderboard
     <span class="text-xs font-normal text-slate-500 ml-1 uppercase tracking-wider">{{ system }}</span>
   </h1>
   <a href="{{ url_for('main.settings') }}"
      class="text-xs text-slate-500 hover:text-accent transition-colors flex items-center gap-1">
-    <i class="fa fa-gear"></i> Switch rating system
+    <i class="fa fa-gear"></i> Switch system
+  </a>
+  <a href="{{ url_for('main.how_it_works') }}"
+     class="text-xs text-slate-500 hover:text-accent transition-colors flex items-center gap-1">
+    <i class="fa fa-circle-question"></i> How it works
   </a>
 </div>
 
-<!-- How ratings work — collapsible -->
-<details class="mb-4">
-  <summary class="cursor-pointer text-xs text-slate-500 hover:text-slate-300 transition-colors
-                  flex items-center gap-1.5 select-none">
-    <i class="fa fa-circle-info"></i>
-    How does the {{ system }} rating system work?
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-filter"></i> Filter Ranking</div>
+  <form method="get" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+    <div>
+      <label class="lbl">Search name</label>
+      <input type="text" class="inp" name="name" value="{{ name_filter }}" placeholder="Player name…">
+    </div>
+    <div>
+      <label class="lbl">Min. games played</label>
+      <input type="number" class="inp" name="min_games" value="{{ min_games if min_games else '' }}" min="0" placeholder="e.g. 5">
+    </div>
+    <div class="flex gap-2 items-end">
+      <button type="submit" class="btn-green" style="width:auto;padding:9px 20px">
+        <i class="fa fa-magnifying-glass"></i> Filter
+      </button>
+      <a href="{{ url_for('main.index') }}"
+         class="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-400 text-sm hover:text-white
+                border border-white/[0.07] hover:border-white/20 transition-all">
+        <i class="fa fa-xmark"></i> Clear
+      </a>
+    </div>
+  </form>
+</div>
+
+<!-- How the rating works — collapsible -->
+<details class="mb-4 group">
+  <summary class="cursor-pointer flex items-center gap-2 text-xs text-slate-500
+                  hover:text-slate-300 transition-colors select-none px-1 py-0.5">
+    <i class="fa fa-circle-info text-accent/70"></i>
+    How does the <strong class="text-slate-400">{{ system }}</strong> rating work?
+    <i class="fa fa-chevron-down text-[0.6rem] ml-auto group-open:rotate-180 transition-transform"></i>
   </summary>
-  <div class="mt-2 p-4 rounded-lg border border-white/[0.06] bg-white/[0.02] text-sm text-slate-400 leading-relaxed">
+  <div class="mt-2 p-4 rounded-lg border border-white/[0.06] bg-white/[0.02] text-sm text-slate-400 leading-relaxed space-y-3">
     {% if system == 'elo' %}
-      <p><strong class="text-slate-200">Elo</strong> — Each player starts at <strong class="text-accent">1500</strong>.
-      After every match the winner gains points (and the loser loses the same amount). The K-factor is
-      <strong class="text-accent">32</strong>. The amount of points exchanged depends on the expected outcome:
-      beating a much stronger player earns more points than beating a weaker one. A draw gives each player
-      half the expected exchange.</p>
+    <p>Everyone starts at <span class="text-accent font-semibold">1500</span>. After each match, points are exchanged based on
+    who was <em>expected</em> to win. Beating a stronger player earns more; beating a weaker one earns less.</p>
+    <p class="font-mono text-xs bg-black/30 rounded px-3 py-2 text-slate-300">
+      E = 1 / (1 + 10<sup>((R_opp − R_you) / 400)</sup>
+    </p>
+    <p>The <span class="text-accent font-semibold">K factor</span> controls how fast ratings move.
+    New players use <strong>K=40</strong> (first 5 games), then <strong>K=24</strong> (games 6–15), then <strong>K=20</strong>.
+    Bigger wins apply a small multiplier (up to ×1.15). Rematches on the same day are progressively damped.</p>
+    <p><a href="{{ url_for('main.how_it_works') }}" class="text-accent/80 hover:text-accent underline underline-offset-2 text-xs">
+      Full explanation with worked example →
+    </a></p>
     {% else %}
-      <p><strong class="text-slate-200">Glicko-2</strong> — Extends Elo with a <em>Rating Deviation (RD)</em>
-      that measures uncertainty, and a <em>volatility</em> that tracks rating consistency.
-      Players start at <strong class="text-accent">1500 ± 350 RD</strong>.
-      The rating converges as more games are played. A high RD means the rating is less reliable.</p>
+    <p><strong class="text-slate-200">Glicko-2</strong> adds a <em>Rating Deviation (RD)</em> to Elo — it measures
+    how confident we are about a rating. New players have high RD (uncertain), which decreases as they play more.</p>
+    <p>Players start at <span class="text-accent font-semibold">1500 ± 350 RD</span>.
+    A lower RD means the rating is more reliable.</p>
     {% endif %}
   </div>
 </details>
@@ -43,10 +79,10 @@
       <thead>
         <tr>
           <th>#</th>
-          <th></th><!-- movement -->
+          <th></th>
           <th>Player</th>
           <th>{{ 'Glicko' if system == 'glicko2' else 'Elo' }}</th>
-          {% if system == 'glicko2' %}<th class="r">RD</th>{% endif %}
+          {% if system == 'glicko2' %}<th class="r">±RD</th>{% endif %}
           <th class="r">Pts</th>
           <th class="r">G</th>
           <th class="r">W</th>
@@ -74,7 +110,6 @@
               <span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs text-slate-500">{{ row.rank }}</span>
             {% endif %}
           </td>
-          <!-- Movement indicator -->
           <td style="padding-left:2px;padding-right:2px;width:28px">
             {% if row.movement_dir == 'up' %}
               <span class="text-emerald-400 text-xs font-semibold flex items-center gap-0.5">
@@ -120,7 +155,6 @@
   </div>
 </div>
 
-<!-- Quick predict link -->
 {% if ranking | length >= 2 %}
 <div class="mt-3 text-center">
   <a href="{{ url_for('main.predict') }}" class="text-xs text-slate-500 hover:text-accent transition-colors">
@@ -132,8 +166,12 @@
 {% else %}
 <div class="flash flash-inf">
   <i class="fa fa-circle-info mt-0.5"></i>
-  <span>No data yet. <a href="{{ url_for('main.players') }}" class="underline underline-offset-2">Add players</a>
-  and <a href="{{ url_for('main.add_match') }}" class="underline underline-offset-2">record matches</a> to get started.</span>
+  {% if name_filter or min_games %}
+    <span>No players match your filters. <a href="{{ url_for('main.index') }}" class="underline underline-offset-2">Clear filters</a></span>
+  {% else %}
+    <span>No data yet. <a href="{{ url_for('main.players') }}" class="underline underline-offset-2">Add players</a>
+    and <a href="{{ url_for('main.add_match') }}" class="underline underline-offset-2">record matches</a> to get started.</span>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

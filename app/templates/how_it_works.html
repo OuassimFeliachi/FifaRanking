@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}How It Works{% endblock %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+<h1 class="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+  <i class="fa fa-circle-question text-accent"></i> How the Ranking Works
+</h1>
+<p class="text-slate-500 text-sm mb-6">A plain-language explanation of the Elo system used in this app.</p>
+
+<!-- 1. The big idea -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-lightbulb"></i> The Big Idea</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>Every player starts with a rating of <span class="text-accent font-bold">1500</span>.
+    After each match, the winner gains points and the loser loses the same amount.</p>
+    <p>The key insight: <strong class="text-white">beating a stronger player earns more points</strong>
+    than beating a weaker one. If you were already expected to win, you gain little. If you pull off an
+    upset, you gain a lot.</p>
+    <p>This means rankings reflect <em>quality of wins</em>, not just number of wins.</p>
+  </div>
+</div>
+
+<!-- 2. Expected score -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-calculator"></i> Step 1 — Expected Score</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>Before each match, the system calculates how likely each player is to win, based on the rating gap:</p>
+    <div class="bg-black/40 rounded-lg px-4 py-3 border border-white/[0.07] font-mono text-slate-200 text-sm">
+      E = 1 / (1 + 10<sup>((R_opp − R_you) / 400)</sup>)
+    </div>
+    <p>This gives a number between 0 and 1 — your <strong class="text-white">expected score</strong>.</p>
+    <ul class="space-y-1 ml-4 list-disc text-slate-400">
+      <li>Same rating → E ≈ 0.50 (50% chance each)</li>
+      <li>+200 rating advantage → E ≈ 0.76</li>
+      <li>+400 rating advantage → E ≈ 0.91</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 3. Rating update -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-arrows-up-down"></i> Step 2 — Rating Update</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>After the match, each player's rating is updated:</p>
+    <div class="bg-black/40 rounded-lg px-4 py-3 border border-white/[0.07] font-mono text-slate-200 text-sm">
+      new_rating = old_rating + K_effective × (actual − expected)
+    </div>
+    <p>The <strong class="text-white">actual score</strong> is:</p>
+    <ul class="space-y-1 ml-4 list-disc text-slate-400">
+      <li><span class="text-emerald-400 font-bold">Win</span> → 1.0</li>
+      <li><span class="text-slate-400 font-bold">Draw</span> → 0.5</li>
+      <li><span class="text-red-400 font-bold">Loss</span> → 0.0</li>
+    </ul>
+    <p>If your expected score was 0.70 and you won (1.0), the difference is +0.30 → you gain points.
+    If you lost (0.0), the difference is −0.70 → you lose quite a lot, because that was an upset.</p>
+  </div>
+</div>
+
+<!-- 4. Provisional K -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-k text-xs"></i><span>K Factor — Speed of Change</span></div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>The <strong class="text-white">K factor</strong> controls how many points can be gained or lost
+    in a single match. We use a <em>provisional K</em> that starts high and decreases as a player builds
+    a match history:</p>
+    <div class="grid grid-cols-3 gap-2 my-2">
+      <div class="bg-white/[0.03] border border-white/[0.07] rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-accent">40</div>
+        <div class="text-slate-500 text-[0.65rem] uppercase tracking-wider mt-1">Games 1–5</div>
+        <div class="text-slate-600 text-[0.65rem] mt-1">Fast calibration</div>
+      </div>
+      <div class="bg-white/[0.03] border border-white/[0.07] rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-yellow-400">24</div>
+        <div class="text-slate-500 text-[0.65rem] uppercase tracking-wider mt-1">Games 6–15</div>
+        <div class="text-slate-600 text-[0.65rem] mt-1">Still settling</div>
+      </div>
+      <div class="bg-white/[0.03] border border-white/[0.07] rounded-lg p-3 text-center">
+        <div class="text-xl font-bold text-slate-300">20</div>
+        <div class="text-slate-500 text-[0.65rem] uppercase tracking-wider mt-1">Games 16+</div>
+        <div class="text-slate-600 text-[0.65rem] mt-1">Stable</div>
+      </div>
+    </div>
+    <p class="text-slate-400">When two players have different K values, the match uses the <em>average</em> of the two.</p>
+    <p>New players' ratings move fast at first so they reach their true level quickly. After 15 games,
+    ratings are considered reliable and change more slowly.</p>
+  </div>
+</div>
+
+<!-- 5. Goal-diff multiplier -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-futbol"></i> Goal-Difference Multiplier</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>A dominant win earns a small bonus. Crushing someone 5–0 should count for a bit more than scraping
+    through 1–0:</p>
+    <div class="grid grid-cols-4 gap-2 my-2">
+      {% for label, mult, color in [
+        ('0–1 goal', '×1.00', 'text-slate-300'),
+        ('2 goals',  '×1.05', 'text-yellow-400/80'),
+        ('3 goals',  '×1.10', 'text-orange-400/80'),
+        ('4+ goals', '×1.15', 'text-red-400/80'),
+      ] %}
+      <div class="bg-white/[0.03] border border-white/[0.07] rounded-lg p-3 text-center">
+        <div class="text-lg font-bold {{ color }}">{{ mult }}</div>
+        <div class="text-slate-500 text-[0.65rem] uppercase tracking-wider mt-1">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-slate-400">The multiplier is kept modest on purpose — we don't want farming big scorelines
+    to massively inflate ratings.</p>
+  </div>
+</div>
+
+<!-- 6. Repeat damping -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-repeat"></i> Same-Day Rematch Damping</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>If two players play multiple times on the same day, later rematches carry less weight.
+    This prevents someone from farming rating points through endless sessions against the same opponent:</p>
+    <div class="grid grid-cols-4 gap-2 my-2">
+      {% for label, mult, color in [
+        ('1st match', '×1.00', 'text-accent'),
+        ('2nd match', '×1.00', 'text-accent'),
+        ('3rd match', '×0.75', 'text-yellow-400/80'),
+        ('4th+ match','×0.50', 'text-red-400/80'),
+      ] %}
+      <div class="bg-white/[0.03] border border-white/[0.07] rounded-lg p-3 text-center">
+        <div class="text-lg font-bold {{ color }}">{{ mult }}</div>
+        <div class="text-slate-500 text-[0.65rem] uppercase tracking-wider mt-1">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-slate-400">The first two matches of the day between the same pair are fully weighted.
+    A third is worth 75%, a fourth and beyond 50%.</p>
+  </div>
+</div>
+
+<!-- 7. Effective K formula -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-function"></i> Putting It All Together</div>
+  <div class="p-5 space-y-3 text-slate-300 text-sm leading-relaxed">
+    <p>The final effective K for any match is:</p>
+    <div class="bg-black/40 rounded-lg px-4 py-3 border border-white/[0.07] font-mono text-slate-200 text-sm">
+      K_effective = base_K × goal_diff_multiplier × repeat_multiplier
+    </div>
+    <p>And the rating update is:</p>
+    <div class="bg-black/40 rounded-lg px-4 py-3 border border-white/[0.07] font-mono text-slate-200 text-sm">
+      new_rating = old_rating + K_effective × (actual − expected)
+    </div>
+    <p>Ratings are <strong class="text-white">always recomputed from scratch</strong> in chronological order
+    whenever any match is added, edited or deleted. This ensures historical consistency.</p>
+  </div>
+</div>
+
+<!-- 8. Worked example -->
+<div class="card mb-4">
+  <div class="card-head"><i class="fa fa-flask"></i> Worked Example</div>
+  <div class="p-5 space-y-4 text-slate-300 text-sm leading-relaxed">
+    <p class="text-slate-400">Alice (rating <strong class="text-white">1600</strong>, 20 games)
+    beats Bob (rating <strong class="text-white">1400</strong>, 3 games) <strong class="text-white">3–1</strong>.
+    It's their first match today.</p>
+
+    <div class="space-y-2">
+      <div class="flex items-start gap-3">
+        <span class="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
+        <div>
+          <p class="text-white font-medium">Expected scores</p>
+          <p class="text-slate-400">Alice: E = 1/(1+10<sup>((1400−1600)/400)</sup>) = 1/(1+10<sup>−0.5</sup>) ≈ <span class="text-slate-200">0.76</span></p>
+          <p class="text-slate-400">Bob: E ≈ <span class="text-slate-200">0.24</span></p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
+        <div>
+          <p class="text-white font-medium">K factor</p>
+          <p class="text-slate-400">Alice (20 games) → K = 20. Bob (3 games) → K = 40. Average = <span class="text-slate-200">30</span></p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
+        <div>
+          <p class="text-white font-medium">Multipliers</p>
+          <p class="text-slate-400">Goal diff = 2 → ×1.05. First match today → ×1.00.
+          K_eff = 30 × 1.05 × 1.00 = <span class="text-slate-200">31.5</span></p>
+        </div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
+        <div>
+          <p class="text-white font-medium">Rating change</p>
+          <p class="text-slate-400">Alice: +31.5 × (1.0 − 0.76) = <span class="text-emerald-400 font-semibold">+7.6</span> → 1607.6</p>
+          <p class="text-slate-400">Bob: +31.5 × (0.0 − 0.24) = <span class="text-red-400 font-semibold">−7.6</span> → 1392.4</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-slate-500 text-xs">Alice gains only 7.6 points despite winning comfortably — she was heavily favoured.
+    If Bob had pulled the upset, he would have gained around 23.7 points.</p>
+  </div>
+</div>
+
+<div class="text-center mt-6 mb-2">
+  <a href="{{ url_for('main.index') }}"
+     class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-accent transition-colors">
+    <i class="fa fa-arrow-left"></i> Back to Ranking
+  </a>
+</div>
+
+</div>
+{% endblock %}

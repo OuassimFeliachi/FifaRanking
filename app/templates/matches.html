@@ -9,13 +9,22 @@
 <!-- Filters -->
 <div class="card mb-4">
   <div class="card-head"><i class="fa fa-filter"></i> Filter Matches</div>
-  <form method="get" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+  <form method="get" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
     <div>
       <label class="lbl">Player</label>
       <select class="inp" name="player_id">
         <option value="">All players</option>
         {% for p in all_players %}
         <option value="{{ p.id }}" {% if player_filter == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="lbl">Opponent</label>
+      <select class="inp" name="opponent_id">
+        <option value="">Any opponent</option>
+        {% for p in all_players %}
+        <option value="{{ p.id }}" {% if opponent_filter == p.id %}selected{% endif %}>{{ p.name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -27,7 +36,7 @@
       <label class="lbl">To date</label>
       <input type="date" class="inp" name="date_to" value="{{ date_to }}">
     </div>
-    <div class="sm:col-span-3 flex gap-2">
+    <div class="sm:col-span-2 lg:col-span-4 flex gap-2">
       <button type="submit" class="btn-green" style="width:auto;padding:8px 20px">
         <i class="fa fa-magnifying-glass"></i> Filter
       </button>
@@ -98,7 +107,11 @@
 {% else %}
 <div class="flash flash-inf">
   <i class="fa fa-circle-info mt-0.5"></i>
-  <span>No matches found. <a href="{{ url_for('main.add_match') }}" class="underline underline-offset-2">Add the first one!</a></span>
+  {% if player_filter or opponent_filter or date_from or date_to %}
+    <span>No matches found for these filters. <a href="{{ url_for('main.matches') }}" class="underline underline-offset-2">Clear filters</a></span>
+  {% else %}
+    <span>No matches yet. <a href="{{ url_for('main.add_match') }}" class="underline underline-offset-2">Add the first one!</a></span>
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

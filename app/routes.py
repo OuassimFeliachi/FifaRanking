@@ -15,8 +15,25 @@ bp = Blueprint("main", __name__)
 def index():
     system = svc.get_active_system()
     ranking = svc.get_ranking(system)
+
+    # Ranking filters (applied after DB query since player count is small)
+    name_filter = request.args.get("name", "").strip().lower()
+    min_games = request.args.get("min_games", 0, type=int)
+
+    if name_filter:
+        ranking = [r for r in ranking if name_filter in r["name"].lower()]
+    if min_games > 0:
+        ranking = [r for r in ranking if r["games"] >= min_games]
+
     all_players = Player.query.order_by(Player.name).all()
-    return render_template("index.html", ranking=ranking, system=system, all_players=all_players)
+    return render_template(
+        "index.html",
+        ranking=ranking,
+        system=system,
+        all_players=all_players,
+        name_filter=name_filter,
+        min_games=min_games,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +69,7 @@ def player_detail(player_id):
         player=player,
         stats=rich["stats"],
         recent_matches=rich["recent_matches"],
+        snapshots_by_match=rich["snapshots_by_match"],
         rating_history=rich["rating_history"],
         form=rich["form"],
         streaks=rich["streaks"],
@@ -146,16 +164,29 @@ def delete_match(match_id):
 
 @bp.route("/matches")
 def matches():
+    from sqlalchemy import or_, and_
     player_filter = request.args.get("player_id", type=int)
+    opponent_filter = request.args.get("opponent_id", type=int)
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
 
     query = Match.query
 
-    if player_filter:
-        from sqlalchemy import or_
+    if player_filter and opponent_filter:
+        # Matches between this specific pair
+        query = query.filter(
+            or_(
+                and_(Match.player1_id == player_filter, Match.player2_id == opponent_filter),
+                and_(Match.player1_id == opponent_filter, Match.player2_id == player_filter),
+            )
+        )
+    elif player_filter:
         query = query.filter(
             or_(Match.player1_id == player_filter, Match.player2_id == player_filter)
+        )
+    elif opponent_filter:
+        query = query.filter(
+            or_(Match.player1_id == opponent_filter, Match.player2_id == opponent_filter)
         )
 
     if date_from:
@@ -178,6 +209,7 @@ def matches():
         matches=all_matches,
         all_players=all_players,
         player_filter=player_filter,
+        opponent_filter=opponent_filter,
         date_from=date_from,
         date_to=date_to,
     )
@@ -278,3 +310,13 @@ def settings():
 
     current_system = svc.get_active_system()
     return render_template("settings.html", current_system=current_system)
+
+
+# ---------------------------------------------------------------------------
+# How it works / Elo explained
+# ---------------------------------------------------------------------------
+
+@bp.route("/how-it-works")
+def how_it_works():
+    system = svc.get_active_system()
+    return render_template("how_it_works.html", system=system)

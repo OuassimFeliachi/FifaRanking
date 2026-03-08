@@ -580,7 +580,8 @@ def get_head_to_head(p1_id: int, p2_id: int) -> dict:
 
 def get_player_stats_rich(player_id: int, system: str = None) -> dict:
     """
-    Rich stats for player detail page: form, streaks, h2h with all opponents.
+    Rich stats for player detail page: form, streaks, h2h with all opponents,
+    and per-match snapshot data (Δrating, K used, expected score).
     """
     if system is None:
         system = get_active_system()
@@ -595,6 +596,21 @@ def get_player_stats_rich(player_id: int, system: str = None) -> dict:
     recent_matches = get_player_recent_matches(player, limit=10)
     form = _get_form(player, n=5)
     streaks = _get_streaks(player)
+
+    # Build {match_id: snapshot} for the player's recent matches
+    recent_match_ids = [m.id for m in recent_matches]
+    snapshots_by_match = {}
+    if recent_match_ids:
+        snaps = (
+            RatingSnapshot.query
+            .filter(
+                RatingSnapshot.player_id == player_id,
+                RatingSnapshot.system_name == system,
+                RatingSnapshot.match_id.in_(recent_match_ids),
+            )
+            .all()
+        )
+        snapshots_by_match = {s.match_id: s for s in snaps}
 
     # H2H vs all opponents
     opponents = Player.query.filter(Player.id != player.id).all()
@@ -611,6 +627,7 @@ def get_player_stats_rich(player_id: int, system: str = None) -> dict:
         "stats": stats,
         "rating_history": rating_history,
         "recent_matches": recent_matches,
+        "snapshots_by_match": snapshots_by_match,
         "form": form,
         "streaks": streaks,
         "h2h_list": h2h_list,

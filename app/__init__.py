@@ -40,6 +40,9 @@ def _migrate_db(app):
     _add_col("rating_snapshot", "delta",           "FLOAT")
     _add_col("rating_snapshot", "rd_before",       "FLOAT")
     _add_col("rating_snapshot", "rd_after",        "FLOAT")
+    _add_col("rating_snapshot", "effective_k",     "FLOAT")
+    _add_col("rating_snapshot", "goal_diff_mult",  "FLOAT")
+    _add_col("rating_snapshot", "repeat_mult",     "FLOAT")
     _add_col("rating_snapshot", "created_at",      "DATETIME")
 
     # Fix existing snapshots that have NULL system_name (from before this migration)

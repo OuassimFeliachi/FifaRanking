@@ -19,7 +19,7 @@
   <!-- Form badges -->
   {% if form %}
   <div class="flex items-center gap-1">
-    <span class="text-xs text-slate-600 mr-1">Form:</span>
+    <span class="text-xs text-slate-600 mr-1">Last {{ form|length }}:</span>
     {% for r in form %}
       {% if r == 'W' %}
         <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-emerald-500/15 text-emerald-400">W</span>
@@ -90,11 +90,19 @@
     </div>
   </div>
 
-  <!-- Recent results -->
+  <!-- Recent results with snapshot data -->
   <div class="card">
     <div class="card-head"><i class="fa fa-clock-rotate-left"></i> Recent Results</div>
     {% if recent_matches %}
     <table class="tbl">
+      <thead>
+        <tr>
+          <th>Res</th>
+          <th>Opponent</th>
+          <th class="r">Score</th>
+          {% if system == 'elo' %}<th class="r" title="Rating change">Δ</th>{% endif %}
+        </tr>
+      </thead>
       <tbody>
         {% for m in recent_matches %}
         {% set is_p1 = m.player1_id == player.id %}
@@ -102,6 +110,7 @@
         {% set opp = m.score2 if is_p1 else m.score1 %}
         {% set opp_p = m.player2 if is_p1 else m.player1 %}
         {% set r = 'W' if my > opp else ('D' if my == opp else 'L') %}
+        {% set snap = snapshots_by_match.get(m.id) %}
         <tr>
           <td>
             {% if r == 'W' %}
@@ -115,10 +124,41 @@
           <td>
             <a href="{{ url_for('main.player_detail', player_id=opp_p.id) }}"
                class="text-slate-300 hover:text-accent font-medium transition-colors">{{ opp_p.name }}</a>
+            <div class="text-slate-600 text-[0.65rem]">{{ m.match_date }}</div>
           </td>
           <td class="r font-bold text-slate-200">{{ my }}–{{ opp }}</td>
-          <td class="text-slate-600 text-xs">{{ m.match_date }}</td>
+          {% if system == 'elo' %}
+          <td class="r text-xs font-semibold">
+            {% if snap and snap.delta is not none %}
+              <span class="{% if snap.delta > 0 %}text-emerald-400{% elif snap.delta < 0 %}text-red-400{% else %}text-slate-500{% endif %}">
+                {% if snap.delta > 0 %}+{% endif %}{{ snap.delta | round(1) }}
+              </span>
+            {% else %}
+              <span class="text-slate-700">—</span>
+            {% endif %}
+          </td>
+          {% endif %}
         </tr>
+        <!-- Snapshot detail row (Elo only) -->
+        {% if system == 'elo' and snap %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td colspan="4" class="py-1 px-3" style="background:rgba(0,0,0,0.15);border-bottom:1px solid rgba(255,255,255,0.04)">
+            <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-[0.65rem] text-slate-600">
+              <span>Before: <span class="text-slate-400">{{ snap.rating_before | round(1) }}</span></span>
+              <span>Expected: <span class="text-slate-400">{{ (snap.expected_score * 100) | round(1) }}%</span></span>
+              <span>K: <span class="text-slate-400">{{ snap.effective_k }}</span>
+                {% if snap.goal_diff_mult and snap.goal_diff_mult != 1.0 %}
+                  <span class="text-slate-600">(×{{ snap.goal_diff_mult }}gd</span>
+                {% endif %}
+                {% if snap.repeat_mult and snap.repeat_mult != 1.0 %}
+                  <span class="text-slate-600"> ×{{ snap.repeat_mult }}rep)</span>
+                {% endif %}
+              </span>
+              <span>After: <span class="text-slate-400">{{ snap.rating_after | round(1) }}</span></span>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
