@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Ranking{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">🏆 Ranking</h2>
+
+{% if ranking %}
+<div class="table-responsive">
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-success">
+      <tr>
+        <th>#</th>
+        <th>Player</th>
+        <th class="text-end">Elo</th>
+        <th class="text-end">Pts</th>
+        <th class="text-end">G</th>
+        <th class="text-end">W</th>
+        <th class="text-end">D</th>
+        <th class="text-end">L</th>
+        <th class="text-end">GF</th>
+        <th class="text-end">GA</th>
+        <th class="text-end">GD</th>
+        <th class="text-end">Win%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in ranking %}
+      <tr {% if loop.first %}class="table-warning fw-bold"{% endif %}>
+        <td>{{ row.rank }}</td>
+        <td><a href="{{ url_for('main.player_detail', player_id=row.id) }}">{{ row.name }}</a></td>
+        <td class="text-end">{{ row.rating }}</td>
+        <td class="text-end">{{ row.points }}</td>
+        <td class="text-end">{{ row.games }}</td>
+        <td class="text-end text-success">{{ row.wins }}</td>
+        <td class="text-end text-secondary">{{ row.draws }}</td>
+        <td class="text-end text-danger">{{ row.losses }}</td>
+        <td class="text-end">{{ row.goals_for }}</td>
+        <td class="text-end">{{ row.goals_against }}</td>
+        <td class="text-end">
+          {% if row.goal_diff > 0 %}+{% endif %}{{ row.goal_diff }}
+        </td>
+        <td class="text-end">{{ row.win_rate }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+  No players yet. <a href="{{ url_for('main.players') }}">Add some players</a> and
+  <a href="{{ url_for('main.add_match') }}">record matches</a> to get started.
+</div>
+{% endif %}
+{% endblock %}

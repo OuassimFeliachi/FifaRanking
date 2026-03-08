@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Match History{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Match History</h2>
+
+{% if matches %}
+<div class="table-responsive">
+  <table class="table table-hover table-bordered align-middle">
+    <thead class="table-success">
+      <tr>
+        <th>Date</th>
+        <th class="text-end">Player 1</th>
+        <th class="text-center">Score</th>
+        <th>Player 2</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in matches %}
+      {% set p1_wins = m.score1 > m.score2 %}
+      {% set p2_wins = m.score2 > m.score1 %}
+      <tr>
+        <td class="text-muted small">{{ m.match_date }}</td>
+        <td class="text-end fw-semibold {% if p1_wins %}text-success{% elif p2_wins %}text-danger{% endif %}">
+          <a href="{{ url_for('main.player_detail', player_id=m.player1_id) }}">{{ m.player1.name }}</a>
+        </td>
+        <td class="text-center fw-bold">{{ m.score1 }} – {{ m.score2 }}</td>
+        <td class="fw-semibold {% if p2_wins %}text-success{% elif p1_wins %}text-danger{% endif %}">
+          <a href="{{ url_for('main.player_detail', player_id=m.player2_id) }}">{{ m.player2.name }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="text-muted small">{{ matches | length }} match(es) total.</p>
+{% else %}
+<div class="alert alert-info">
+  No matches recorded yet. <a href="{{ url_for('main.add_match') }}">Add the first one!</a>
+</div>
+{% endif %}
+{% endblock %}

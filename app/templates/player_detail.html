@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }}{% endblock %}
+
+{% block content %}
+<h2 class="mb-1">{{ player.name }}</h2>
+<p class="text-muted mb-4">Player profile</p>
+
+<div class="row g-4">
+  <!-- Stats cards -->
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-success text-white fw-bold">Statistics</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Elo Rating</span><strong>{{ stats.rating }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Points</span><strong>{{ stats.points }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Games played</span><strong>{{ stats.games }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-success">Wins</span><strong class="text-success">{{ stats.wins }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-secondary">Draws</span><strong class="text-secondary">{{ stats.draws }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span class="text-danger">Losses</span><strong class="text-danger">{{ stats.losses }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Win rate</span><strong>{{ stats.win_rate }}%</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Goals for</span><strong>{{ stats.goals_for }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Goals against</span><strong>{{ stats.goals_against }}</strong>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Goal diff</span>
+          <strong class="{% if stats.goal_diff > 0 %}text-success{% elif stats.goal_diff < 0 %}text-danger{% endif %}">
+            {% if stats.goal_diff > 0 %}+{% endif %}{{ stats.goal_diff }}
+          </strong>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Rating chart -->
+  <div class="col-md-8">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-success text-white fw-bold">Rating Evolution</div>
+      <div class="card-body">
+        {% if rating_history | length > 1 %}
+        <canvas id="ratingChart" height="120"></canvas>
+        {% else %}
+        <p class="text-muted mt-3">No matches yet — play some games to see your evolution!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent matches -->
+<div class="mt-4">
+  <h5>Recent Matches</h5>
+  {% if recent_matches %}
+  <div class="table-responsive">
+    <table class="table table-sm table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th class="text-end">Player 1</th>
+          <th class="text-center">Score</th>
+          <th>Player 2</th>
+          <th class="text-end">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in recent_matches %}
+        {% set is_p1 = m.player1_id == player.id %}
+        {% set my_score = m.score1 if is_p1 else m.score2 %}
+        {% set opp_score = m.score2 if is_p1 else m.score1 %}
+        {% set result = "W" if my_score > opp_score else ("D" if my_score == opp_score else "L") %}
+        <tr>
+          <td class="small text-muted">{{ m.match_date }}</td>
+          <td class="text-end">
+            <a href="{{ url_for('main.player_detail', player_id=m.player1_id) }}">{{ m.player1.name }}</a>
+          </td>
+          <td class="text-center fw-bold">{{ m.score1 }} – {{ m.score2 }}</td>
+          <td>
+            <a href="{{ url_for('main.player_detail', player_id=m.player2_id) }}">{{ m.player2.name }}</a>
+          </td>
+          <td class="text-end">
+            <span class="badge {% if result == 'W' %}bg-success{% elif result == 'D' %}bg-secondary{% else %}bg-danger{% endif %}">
+              {{ result }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted">No matches yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if rating_history | length > 1 %}
+<script>
+const labels = {{ rating_history | map(attribute='label') | list | tojson }};
+const data   = {{ rating_history | map(attribute='rating') | list | tojson }};
+
+new Chart(document.getElementById('ratingChart'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Elo Rating',
+      data: data,
+      borderColor: '#198754',
+      backgroundColor: 'rgba(25, 135, 84, 0.1)',
+      pointRadius: 4,
+      tension: 0.3,
+      fill: true,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0].label.replace(' vs ', '\nvs '),
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { display: false } },
+      y: { beginAtZero: false }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

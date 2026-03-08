@@ -1,0 +1,30 @@
+/* Custom styles for FIFA Elo app */
+
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-size: 1.3rem;
+  letter-spacing: 0.5px;
+}
+
+/* Ranking table: highlight top 3 */
+table tbody tr:nth-child(1) td:first-child { color: #ffc107; font-weight: bold; }
+table tbody tr:nth-child(2) td:first-child { color: #adb5bd; font-weight: bold; }
+table tbody tr:nth-child(3) td:first-child { color: #cd7f32; font-weight: bold; }
+
+/* Card header */
+.card-header {
+  font-size: 1rem;
+}
+
+/* Subtle hover on list-group items */
+.list-group-item-action:hover {
+  background-color: #e9f7ef;
+}
+
+/* Pre blocks for CSV sample */
+pre {
+  font-size: 0.85rem;
+}
