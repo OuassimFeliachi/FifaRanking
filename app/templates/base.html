@@ -4,45 +4,110 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Ranking{% endblock %} — FIFA Elo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'sans-serif'] },
+          colors: { accent: '#00e676' }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #090b14; }
+    ::-webkit-scrollbar-thumb { background: #222640; border-radius: 10px; }
+    select option { background: #141728; color: #e2e8f0; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5) brightness(1.5); cursor: pointer; }
+  </style>
 </head>
-<body>
+<body class="bg-[#090b14] text-slate-200 min-h-screen">
 
-<nav class="navbar navbar-expand-lg">
-  <div class="container">
-    <a class="navbar-brand" href="{{ url_for('main.index') }}">
-      <div class="brand-icon">⚽</div>
-      <span class="brand-label">FIFA <span>Elo</span></span>
+<nav class="sticky top-0 z-50 bg-[#07090f]/95 backdrop-blur-sm border-b border-white/[0.06]">
+  <div class="max-w-6xl mx-auto px-4 flex items-center h-14 gap-2">
+    <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 font-extrabold text-white mr-6 shrink-0">
+      <span class="w-8 h-8 bg-gradient-to-br from-accent to-emerald-600 rounded-lg flex items-center justify-center text-sm leading-none">⚽</span>
+      <span>FIFA <span class="text-accent">Elo</span></span>
     </a>
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
-            style="color: var(--text-secondary);">
+    <div class="hidden md:flex items-center gap-0.5 ml-auto">
+      <a href="{{ url_for('main.index') }}"     class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
+      <a href="{{ url_for('main.players') }}"   class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
+      <a href="{{ url_for('main.add_match') }}" class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
+      <a href="{{ url_for('main.matches') }}"   class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+      <a href="{{ url_for('main.import_csv') }}" class="nav-link"><i class="fa fa-file-csv fa-xs"></i> Import</a>
+    </div>
+    <button onclick="document.getElementById('mm').classList.toggle('hidden')"
+            class="md:hidden ml-auto text-slate-400 hover:text-white p-1.5 transition-colors">
       <i class="fa fa-bars"></i>
     </button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav ms-auto gap-1">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}"><i class="fa fa-trophy"></i> Ranking</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.players') }}"><i class="fa fa-users"></i> Players</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.add_match') }}"><i class="fa fa-plus"></i> Add Match</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.matches') }}"><i class="fa fa-clock-rotate-left"></i> History</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.import_csv') }}"><i class="fa fa-file-csv"></i> Import</a></li>
-      </ul>
-    </div>
+  </div>
+  <div id="mm" class="hidden md:hidden border-t border-white/[0.06] px-4 py-2 flex flex-col gap-0.5">
+    <a href="{{ url_for('main.index') }}"     class="nav-link"><i class="fa fa-trophy fa-xs"></i> Ranking</a>
+    <a href="{{ url_for('main.players') }}"   class="nav-link"><i class="fa fa-users fa-xs"></i> Players</a>
+    <a href="{{ url_for('main.add_match') }}" class="nav-link"><i class="fa fa-plus fa-xs"></i> Add Match</a>
+    <a href="{{ url_for('main.matches') }}"   class="nav-link"><i class="fa fa-clock-rotate-left fa-xs"></i> History</a>
+    <a href="{{ url_for('main.import_csv') }}" class="nav-link"><i class="fa fa-file-csv fa-xs"></i> Import</a>
   </div>
 </nav>
 
-<div class="container main-wrapper">
+<style>
+  .nav-link { display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px;
+              color:#94a3b8; font-size:0.82rem; font-weight:500; transition:all 0.15s; }
+  .nav-link:hover { color:#fff; background:rgba(255,255,255,0.06); }
+  .card { background:#111422; border:1px solid rgba(255,255,255,0.07); border-radius:12px; overflow:hidden; }
+  .card-head { padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.06);
+               font-size:0.68rem; font-weight:600; color:#64748b;
+               text-transform:uppercase; letter-spacing:.07em; display:flex; align-items:center; gap:6px; }
+  .card-head i { color:#00e676; }
+  .inp { display:block; width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+         color:#e2e8f0; border-radius:8px; padding:9px 13px; font-family:'Poppins',sans-serif;
+         font-size:0.87rem; transition:border-color .15s, box-shadow .15s; }
+  .inp:focus { outline:none; border-color:#00e676; box-shadow:0 0 0 3px rgba(0,230,118,.12); }
+  .inp::placeholder { color:#475569; }
+  .lbl { display:block; font-size:0.7rem; font-weight:600; color:#64748b;
+         text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+  .btn-green { display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
+               background:linear-gradient(135deg,#00e676,#00c96a); color:#000; font-weight:700;
+               font-size:0.85rem; border:none; border-radius:8px; padding:10px 18px;
+               cursor:pointer; font-family:'Poppins',sans-serif; transition:all .18s; }
+  .btn-green:hover { box-shadow:0 4px 20px rgba(0,230,118,.3); transform:translateY(-1px); }
+  .tbl { width:100%; border-collapse:collapse; }
+  .tbl th { background:rgba(255,255,255,0.025); color:#475569; font-size:0.67rem; font-weight:600;
+            text-transform:uppercase; letter-spacing:.07em; padding:9px 14px;
+            border-bottom:1px solid rgba(255,255,255,0.06); text-align:left; }
+  .tbl th.r, .tbl td.r { text-align:right; }
+  .tbl th.c, .tbl td.c { text-align:center; }
+  .tbl td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04);
+            color:#cbd5e1; background:transparent; vertical-align:middle; font-size:0.86rem; }
+  .tbl tbody tr:last-child td { border-bottom:none; }
+  .tbl tbody tr:hover td { background:rgba(255,255,255,0.02); }
+  .flash { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+           border-radius:8px; font-size:0.85rem; margin-bottom:16px; }
+  .flash-ok  { background:rgba(0,230,118,.08); border:1px solid rgba(0,230,118,.2); color:#6effc4; }
+  .flash-err { background:rgba(248,113,113,.08); border:1px solid rgba(248,113,113,.2); color:#fca5a5; }
+  .flash-inf { background:rgba(96,165,250,.08); border:1px solid rgba(96,165,250,.2); color:#93c5fd; }
+  .flash-wrn { background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.2); color:#fde68a; }
+</style>
+
+<div class="max-w-6xl mx-auto px-4 py-8 pb-20">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
-      {% set cls = 'flash-success' if category == 'success' else ('flash-danger' if category == 'danger' else ('flash-warning' if category == 'warning' else 'flash-info')) %}
-      {% set icon = 'fa-circle-check' if category == 'success' else ('fa-circle-xmark' if category == 'danger' else ('fa-triangle-exclamation' if category == 'warning' else 'fa-circle-info')) %}
-      <div class="flash-bar {{ cls }}"><i class="fa {{ icon }}"></i> {{ msg }}</div>
+      {% set fc = {'success':'flash-ok','danger':'flash-err','warning':'flash-wrn'} %}
+      {% set fi = {'success':'fa-circle-check','danger':'fa-circle-xmark','warning':'fa-triangle-exclamation'} %}
+      <div class="flash {{ fc.get(category, 'flash-inf') }}">
+        <i class="fa {{ fi.get(category, 'fa-circle-info') }} mt-0.5"></i> {{ msg }}
+      </div>
     {% endfor %}
   {% endwith %}
   {% block content %}{% endblock %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 {% block scripts %}{% endblock %}
 </body>

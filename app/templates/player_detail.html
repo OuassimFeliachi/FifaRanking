@@ -1,106 +1,87 @@
 {% extends "base.html" %}
 {% block title %}{{ player.name }}{% endblock %}
-
 {% block content %}
+
 <!-- Profile header -->
-<div class="profile-header">
-  <div class="p-avatar-lg">{{ player.name[0].upper() }}</div>
+<div class="flex items-center gap-4 mb-6 p-5 rounded-xl border border-accent/15 bg-accent/[0.05]">
+  <div class="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-emerald-600
+              flex items-center justify-center text-black font-extrabold text-2xl shrink-0">
+    {{ player.name[0].upper() }}
+  </div>
   <div>
-    <h1 class="profile-name">{{ player.name }}</h1>
-    <p class="profile-meta"><i class="fa fa-gamepad"></i> {{ stats.games }} games played</p>
+    <h1 class="text-2xl font-bold text-white">{{ player.name }}</h1>
+    <p class="text-slate-500 text-sm mt-0.5"><i class="fa fa-gamepad"></i> {{ stats.games }} games played</p>
   </div>
 </div>
 
-<div class="row g-4 mb-4">
-  <!-- Stat cards -->
-  <div class="col-12">
-    <div class="stat-grid">
-      <div class="stat-card c-gold">
-        <div class="sv">{{ stats.rating }}</div>
-        <div class="sl"><i class="fa fa-star"></i> Elo</div>
-      </div>
-      <div class="stat-card c-green">
-        <div class="sv">{{ stats.points }}</div>
-        <div class="sl">Points</div>
-      </div>
-      <div class="stat-card c-green">
-        <div class="sv">{{ stats.wins }}</div>
-        <div class="sl">Wins</div>
-      </div>
-      <div class="stat-card c-gray">
-        <div class="sv">{{ stats.draws }}</div>
-        <div class="sl">Draws</div>
-      </div>
-      <div class="stat-card c-red">
-        <div class="sv">{{ stats.losses }}</div>
-        <div class="sl">Losses</div>
-      </div>
-      <div class="stat-card c-green">
-        <div class="sv">{{ stats.win_rate }}%</div>
-        <div class="sl">Win rate</div>
-      </div>
-      <div class="stat-card">
-        <div class="sv">{{ stats.goals_for }}</div>
-        <div class="sl">Goals for</div>
-      </div>
-      <div class="stat-card">
-        <div class="sv">{{ stats.goals_against }}</div>
-        <div class="sl">Goals vs</div>
-      </div>
-      <div class="stat-card {% if stats.goal_diff > 0 %}c-green{% elif stats.goal_diff < 0 %}c-red{% endif %}">
-        <div class="sv">{% if stats.goal_diff > 0 %}+{% endif %}{{ stats.goal_diff }}</div>
-        <div class="sl">GD</div>
-      </div>
-    </div>
+<!-- Stat cards -->
+<div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-4">
+  {% set stats_list = [
+    ('fa-star',        'text-yellow-400', stats.rating,       'Elo'),
+    ('fa-medal',       'text-accent',     stats.points,       'Points'),
+    ('fa-check',       'text-accent',     stats.wins,         'Wins'),
+    ('fa-minus',       'text-slate-500',  stats.draws,        'Draws'),
+    ('fa-xmark',       'text-red-400',    stats.losses,       'Losses'),
+    ('fa-percent',     'text-accent',     stats.win_rate~'%', 'Win rate'),
+    ('fa-futbol',      'text-slate-300',  stats.goals_for,    'Goals for'),
+    ('fa-shield',      'text-slate-300',  stats.goals_against,'Goals vs'),
+    ('fa-arrows-up-down','text-slate-300',stats.goal_diff,    'GD'),
+  ] %}
+  {% for icon, color, val, label in stats_list %}
+  <div class="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
+    <div class="text-xl font-bold {{ color }}">{{ val }}</div>
+    <div class="text-slate-500 text-[0.6rem] uppercase tracking-wider mt-1">{{ label }}</div>
   </div>
+  {% endfor %}
 </div>
 
-<div class="row g-4">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
   <!-- Chart -->
-  <div class="col-md-8">
-    <div class="card-dark">
-      <div class="card-head"><i class="fa fa-chart-line"></i> Elo Evolution</div>
-      <div class="card-body-inner">
-        {% if rating_history | length > 1 %}
-        <canvas id="ratingChart" height="140"></canvas>
-        {% else %}
-        <p class="text-dim" style="margin:0">Play some matches to see your rating evolution.</p>
-        {% endif %}
-      </div>
+  <div class="md:col-span-2 card">
+    <div class="card-head"><i class="fa fa-chart-line"></i> Elo Evolution</div>
+    <div class="p-4">
+      {% if rating_history | length > 1 %}
+        <canvas id="ratingChart" height="160"></canvas>
+      {% else %}
+        <p class="text-slate-500 text-sm">Play some matches to see your rating evolution.</p>
+      {% endif %}
     </div>
   </div>
 
-  <!-- Recent matches -->
-  <div class="col-md-4">
-    <div class="card-dark">
-      <div class="card-head"><i class="fa fa-clock-rotate-left"></i> Recent Results</div>
-      <div class="card-body-inner" style="padding:0">
-        {% if recent_matches %}
-        <table class="match-table">
-          <tbody>
-            {% for m in recent_matches %}
-            {% set is_p1 = m.player1_id == player.id %}
-            {% set my_score = m.score1 if is_p1 else m.score2 %}
-            {% set opp_score = m.score2 if is_p1 else m.score1 %}
-            {% set opp = m.player2 if is_p1 else m.player1 %}
-            {% set result = "W" if my_score > opp_score else ("D" if my_score == opp_score else "L") %}
-            <tr>
-              <td>
-                <span class="result-badge result-{{ result | lower }}">{{ result }}</span>
-              </td>
-              <td style="font-weight:500">
-                <a class="player-link" href="{{ url_for('main.player_detail', player_id=opp.id) }}">{{ opp.name }}</a>
-              </td>
-              <td class="text-end score-display">{{ my_score }}–{{ opp_score }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="text-dim" style="margin:0.8rem 1.2rem">No matches yet.</p>
-        {% endif %}
-      </div>
-    </div>
+  <!-- Recent results -->
+  <div class="card">
+    <div class="card-head"><i class="fa fa-clock-rotate-left"></i> Recent Results</div>
+    {% if recent_matches %}
+    <table class="tbl">
+      <tbody>
+        {% for m in recent_matches %}
+        {% set is_p1 = m.player1_id == player.id %}
+        {% set my  = m.score1 if is_p1 else m.score2 %}
+        {% set opp = m.score2 if is_p1 else m.score1 %}
+        {% set opp_p = m.player2 if is_p1 else m.player1 %}
+        {% set r = 'W' if my > opp else ('D' if my == opp else 'L') %}
+        <tr>
+          <td>
+            {% if r == 'W' %}
+              <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-emerald-500/15 text-emerald-400">W</span>
+            {% elif r == 'D' %}
+              <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-slate-500/20 text-slate-400">D</span>
+            {% else %}
+              <span class="inline-block w-6 h-6 rounded text-center text-[0.65rem] font-bold leading-6 bg-red-500/15 text-red-400">L</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('main.player_detail', player_id=opp_p.id) }}"
+               class="text-slate-300 hover:text-accent font-medium transition-colors">{{ opp_p.name }}</a>
+          </td>
+          <td class="r font-bold text-slate-200">{{ my }}–{{ opp }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="p-4 text-slate-500 text-sm">No matches yet.</p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
@@ -116,10 +97,9 @@ new Chart(document.getElementById('ratingChart'), {
   data: {
     labels,
     datasets: [{
-      label: 'Elo',
       data,
       borderColor: '#00e676',
-      backgroundColor: 'rgba(0,230,118,0.08)',
+      backgroundColor: 'rgba(0,230,118,0.07)',
       pointBackgroundColor: '#00e676',
       pointRadius: 4,
       pointHoverRadius: 6,
@@ -132,23 +112,21 @@ new Chart(document.getElementById('ratingChart'), {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#141726',
-        borderColor: 'rgba(255,255,255,0.07)',
+        backgroundColor: '#111422',
+        borderColor: 'rgba(255,255,255,0.08)',
         borderWidth: 1,
-        titleColor: '#8892b0',
-        bodyColor: '#f0f2ff',
+        titleColor: '#64748b',
+        bodyColor: '#e2e8f0',
         bodyFont: { family: 'Poppins', weight: '700', size: 14 },
+        padding: 10,
       }
     },
     scales: {
-      x: {
-        ticks: { display: false },
-        grid: { color: 'rgba(255,255,255,0.04)' }
-      },
+      x: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
       y: {
         beginAtZero: false,
         grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: { color: '#8892b0', font: { family: 'Poppins', size: 11 } }
+        ticks: { color: '#64748b', font: { family: 'Poppins', size: 11 } }
       }
     }
   }

@@ -1,48 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Players{% endblock %}
-
 {% block content %}
-<h1 class="page-title"><i class="fa fa-users"></i> Players</h1>
 
-<div class="row g-4">
-  <div class="col-md-4">
-    <div class="card-dark">
-      <div class="card-head"><i class="fa fa-user-plus"></i> Add Player</div>
-      <div class="card-body-inner">
-        {% if error %}
-        <div class="flash-bar flash-danger mb-md"><i class="fa fa-circle-xmark"></i> {{ error }}</div>
-        {% endif %}
-        <form method="post">
-          <div class="mb-md">
-            <label class="form-label">Player name</label>
-            <input type="text" class="form-control" name="name" placeholder="e.g. Loïc" required autofocus>
-          </div>
-          <button type="submit" class="btn-accent">
-            <i class="fa fa-plus"></i> Add Player
-          </button>
-        </form>
-      </div>
+<h1 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+  <i class="fa fa-users text-accent text-xl"></i> Players
+</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="card">
+    <div class="card-head"><i class="fa fa-user-plus"></i> Add Player</div>
+    <div class="p-4">
+      {% if error %}
+      <div class="flash flash-err mb-3"><i class="fa fa-circle-xmark"></i> {{ error }}</div>
+      {% endif %}
+      <form method="post" class="flex flex-col gap-3">
+        <div>
+          <label class="lbl">Player name</label>
+          <input type="text" class="inp" name="name" placeholder="e.g. Loïc" required autofocus>
+        </div>
+        <button type="submit" class="btn-green"><i class="fa fa-plus"></i> Add Player</button>
+      </form>
     </div>
   </div>
 
-  <div class="col-md-8">
-    <div class="card-dark">
-      <div class="card-head"><i class="fa fa-list"></i> All Players ({{ players | length }})</div>
-      <div class="card-body-inner">
-        {% if players %}
-          {% for p in players %}
-          <a class="player-item" href="{{ url_for('main.player_detail', player_id=p.id) }}">
-            <div class="d-flex align-items-center gap-3">
-              <div class="p-avatar">{{ p.name[0].upper() }}</div>
-              <span style="font-weight:500">{{ p.name }}</span>
-            </div>
-            <i class="fa fa-chevron-right text-dim" style="font-size:0.75rem"></i>
-          </a>
-          {% endfor %}
-        {% else %}
-          <p class="text-dim" style="margin:0">No players yet.</p>
-        {% endif %}
-      </div>
+  <div class="md:col-span-2 card">
+    <div class="card-head"><i class="fa fa-list"></i> All Players ({{ players | length }})</div>
+    <div class="p-4 flex flex-col gap-2">
+      {% if players %}
+        {% for p in players %}
+        <a href="{{ url_for('main.player_detail', player_id=p.id) }}"
+           class="flex items-center justify-between px-4 py-3 rounded-lg border border-white/[0.06] bg-white/[0.02]
+                  hover:bg-accent/10 hover:border-accent/25 transition-all group">
+          <div class="flex items-center gap-3">
+            <span class="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-emerald-600
+                         flex items-center justify-center text-black font-bold text-sm shrink-0">
+              {{ p.name[0].upper() }}
+            </span>
+            <span class="font-medium text-slate-200 group-hover:text-white transition-colors">{{ p.name }}</span>
+          </div>
+          <i class="fa fa-chevron-right text-slate-600 group-hover:text-accent text-xs transition-colors"></i>
+        </a>
+        {% endfor %}
+      {% else %}
+        <p class="text-slate-500 text-sm">No players yet.</p>
+      {% endif %}
     </div>
   </div>
 </div>

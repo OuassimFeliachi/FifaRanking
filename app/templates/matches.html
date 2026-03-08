@@ -1,36 +1,44 @@
 {% extends "base.html" %}
 {% block title %}Match History{% endblock %}
-
 {% block content %}
-<h1 class="page-title"><i class="fa fa-clock-rotate-left"></i> Match History</h1>
+
+<h1 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+  <i class="fa fa-clock-rotate-left text-accent text-xl"></i> Match History
+</h1>
 
 {% if matches %}
-<div class="card-dark">
+<div class="card">
   <div class="card-head"><i class="fa fa-list"></i> {{ matches | length }} match(es)</div>
-  <div class="table-responsive">
-    <table class="match-table">
+  <div class="overflow-x-auto">
+    <table class="tbl">
       <thead>
         <tr>
           <th>Date</th>
-          <th class="text-end">Player 1</th>
-          <th class="text-center">Score</th>
+          <th class="r">Player 1</th>
+          <th class="c">Score</th>
           <th>Player 2</th>
         </tr>
       </thead>
       <tbody>
         {% for m in matches %}
-        {% set p1_wins = m.score1 > m.score2 %}
-        {% set p2_wins = m.score2 > m.score1 %}
+        {% set p1w = m.score1 > m.score2 %}
+        {% set p2w = m.score2 > m.score1 %}
         <tr>
-          <td class="text-dim" style="font-size:0.8rem;white-space:nowrap">{{ m.match_date }}</td>
-          <td class="text-end">
-            <a class="player-link {% if p1_wins %}wdl-w{% elif p2_wins %}wdl-l{% else %}wdl-d{% endif %}"
-               href="{{ url_for('main.player_detail', player_id=m.player1_id) }}">{{ m.player1.name }}</a>
+          <td class="text-slate-500 text-xs whitespace-nowrap">{{ m.match_date }}</td>
+          <td class="r">
+            <a href="{{ url_for('main.player_detail', player_id=m.player1_id) }}"
+               class="font-semibold transition-colors hover:text-accent
+                      {% if p1w %}text-emerald-400{% elif p2w %}text-red-400{% else %}text-slate-400{% endif %}">
+              {{ m.player1.name }}
+            </a>
           </td>
-          <td class="text-center score-display">{{ m.score1 }} – {{ m.score2 }}</td>
+          <td class="c font-bold text-slate-200 whitespace-nowrap">{{ m.score1 }} – {{ m.score2 }}</td>
           <td>
-            <a class="player-link {% if p2_wins %}wdl-w{% elif p1_wins %}wdl-l{% else %}wdl-d{% endif %}"
-               href="{{ url_for('main.player_detail', player_id=m.player2_id) }}">{{ m.player2.name }}</a>
+            <a href="{{ url_for('main.player_detail', player_id=m.player2_id) }}"
+               class="font-semibold transition-colors hover:text-accent
+                      {% if p2w %}text-emerald-400{% elif p1w %}text-red-400{% else %}text-slate-400{% endif %}">
+              {{ m.player2.name }}
+            </a>
           </td>
         </tr>
         {% endfor %}
@@ -39,9 +47,9 @@
   </div>
 </div>
 {% else %}
-<div class="flash-bar flash-info">
-  <i class="fa fa-circle-info"></i>
-  No matches yet. <a href="{{ url_for('main.add_match') }}" style="color:inherit;font-weight:600;">Add the first one!</a>
+<div class="flash flash-inf">
+  <i class="fa fa-circle-info mt-0.5"></i>
+  <span>No matches yet. <a href="{{ url_for('main.add_match') }}" class="underline underline-offset-2">Add the first one!</a></span>
 </div>
 {% endif %}
 {% endblock %}
