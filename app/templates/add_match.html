@@ -2,30 +2,32 @@
 {% block title %}Add Match{% endblock %}
 
 {% block content %}
+<h1 class="page-title"><i class="fa fa-futbol"></i> Record a Match</h1>
+
 <div class="row justify-content-center">
   <div class="col-md-6">
-    <div class="card shadow-sm">
-      <div class="card-header bg-success text-white fw-bold">Record a Match</div>
-      <div class="card-body">
+    <div class="card-dark">
+      <div class="card-head"><i class="fa fa-pen-to-square"></i> Match Details</div>
+      <div class="card-body-inner">
         {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
+        <div class="flash-bar flash-danger mb-md"><i class="fa fa-circle-xmark"></i> {{ error }}</div>
         {% endif %}
 
         {% if players | length < 2 %}
-        <div class="alert alert-warning">
-          You need at least 2 players to record a match.
-          <a href="{{ url_for('main.players') }}">Add players first.</a>
+        <div class="flash-bar flash-warning">
+          <i class="fa fa-triangle-exclamation"></i>
+          Need at least 2 players.
+          <a href="{{ url_for('main.players') }}" style="color:inherit;font-weight:600;">Add players first.</a>
         </div>
         {% else %}
         <form method="post">
-          <div class="mb-3">
-            <label for="match_date" class="form-label">Date</label>
-            <input type="date" class="form-control" id="match_date" name="match_date"
-                   value="{{ today }}" required>
+          <div class="mb-md">
+            <label class="form-label"><i class="fa fa-calendar"></i> Date</label>
+            <input type="date" class="form-control" name="match_date" value="{{ today }}" required>
           </div>
 
-          <div class="row g-3 align-items-end mb-3">
-            <div class="col-5">
+          <div class="vs-grid mb-md">
+            <div>
               <label class="form-label">Player 1</label>
               <select class="form-select" name="player1_id" required>
                 {% for p in players %}
@@ -33,10 +35,8 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-2 text-center">
-              <span class="fs-5 fw-bold">vs</span>
-            </div>
-            <div class="col-5">
+            <div class="vs-sep">VS</div>
+            <div>
               <label class="form-label">Player 2</label>
               <select class="form-select" name="player2_id" required>
                 {% for p in players %}
@@ -46,18 +46,21 @@
             </div>
           </div>
 
-          <div class="row g-3 mb-4">
-            <div class="col-6">
-              <label class="form-label">Score Player 1</label>
-              <input type="number" class="form-control" name="score1" min="0" value="0" required>
+          <div class="vs-grid mb-lg">
+            <div>
+              <label class="form-label">Score P1</label>
+              <input type="number" class="form-control score-input" name="score1" min="0" value="0" required>
             </div>
-            <div class="col-6">
-              <label class="form-label">Score Player 2</label>
-              <input type="number" class="form-control" name="score2" min="0" value="0" required>
+            <div class="vs-sep">—</div>
+            <div>
+              <label class="form-label">Score P2</label>
+              <input type="number" class="form-control score-input" name="score2" min="0" value="0" required>
             </div>
           </div>
 
-          <button type="submit" class="btn btn-success w-100">Save Match</button>
+          <button type="submit" class="btn-accent">
+            <i class="fa fa-floppy-disk"></i> Save Match
+          </button>
         </form>
         {% endif %}
       </div>

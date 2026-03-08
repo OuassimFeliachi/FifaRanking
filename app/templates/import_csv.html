@@ -2,49 +2,56 @@
 {% block title %}Import CSV{% endblock %}
 
 {% block content %}
+<h1 class="page-title"><i class="fa fa-file-csv"></i> Import CSV</h1>
+
 <div class="row justify-content-center">
   <div class="col-md-7">
-    <div class="card shadow-sm">
-      <div class="card-header bg-success text-white fw-bold">Import Matches from CSV</div>
-      <div class="card-body">
-        <p class="text-muted mb-3">
-          Upload a CSV file with the following columns:<br>
-          <code>Date,Joueur 1,Score J1,Score J2,Joueur 2</code><br>
-          Date format: <code>dd/mm/yyyy</code>. Missing players will be created automatically.
+    <div class="card-dark mb-lg">
+      <div class="card-head"><i class="fa fa-upload"></i> Upload File</div>
+      <div class="card-body-inner">
+        <p class="text-dim mb-md" style="font-size:0.85rem">
+          Upload a CSV with columns: <code style="color:var(--accent)">Date, Joueur 1, Score J1, Score J2, Joueur 2</code><br>
+          Date format: <code style="color:var(--accent)">dd/mm/yyyy</code>. Unknown players are created automatically.
         </p>
 
         <form method="post" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label for="csv_file" class="form-label">CSV file</label>
-            <input class="form-control" type="file" id="csv_file" name="csv_file" accept=".csv" required>
+          <div class="mb-md">
+            <label class="form-label"><i class="fa fa-file"></i> CSV file</label>
+            <input class="form-control" type="file" name="csv_file" accept=".csv" required>
           </div>
-          <button type="submit" class="btn btn-success w-100">Import</button>
+          <button type="submit" class="btn-accent">
+            <i class="fa fa-file-import"></i> Import
+          </button>
         </form>
 
         {% if result %}
-        <hr>
-        <h6 class="mt-3">Import result</h6>
-        <p class="text-success fw-bold">{{ result.count }} match(es) imported.</p>
+        <hr class="divider">
+        <div class="flash-bar flash-success">
+          <i class="fa fa-circle-check"></i> {{ result.count }} match(es) imported successfully.
+        </div>
         {% if result.errors %}
-        <h6 class="text-danger">Errors / skipped rows:</h6>
-        <ul class="small text-danger">
-          {% for err in result.errors %}
-          <li>{{ err }}</li>
-          {% endfor %}
-        </ul>
+        <div class="flash-bar flash-warning mt-sm">
+          <div>
+            <strong><i class="fa fa-triangle-exclamation"></i> Skipped rows:</strong>
+            <ul style="margin:0.4rem 0 0 1rem;padding:0;font-size:0.82rem">
+              {% for err in result.errors %}
+              <li>{{ err }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
         {% endif %}
         {% endif %}
       </div>
     </div>
 
-    <!-- Sample CSV reference -->
-    <div class="card mt-3 shadow-sm">
-      <div class="card-header fw-bold">Sample CSV format</div>
-      <div class="card-body">
-        <pre class="bg-light p-2 rounded small">Date,Joueur 1,Score J1,Score J2,Joueur 2
+    <div class="card-dark">
+      <div class="card-head"><i class="fa fa-code"></i> Expected format</div>
+      <div class="card-body-inner">
+        <div class="csv-preview">Date,Joueur 1,Score J1,Score J2,Joueur 2
 01/09/2024,Alice,3,1,Bob
 02/09/2024,Bob,2,2,Charlie
-03/09/2024,Loïc,4,0,Alice</pre>
+03/09/2024,Loïc,4,0,Alice</div>
       </div>
     </div>
   </div>
